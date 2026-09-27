@@ -6,9 +6,10 @@ A minimal self-hosted time tracker. FastAPI backend, SQLite storage, no build st
 
 - Start/stop timer with a live-updating running widget
 - Multiple projects, each with its own color
-- Tags on time entries (create, assign, delete)
-- Entries grouped by day
+- Tags on time entries (create, rename, delete, assign)
+- Inline entry editing (title, start/end time, tags) and day-grouped entry list
 - Statistics tab: total hours, a daily activity chart, and a GitHub-style calendar heatmap, all filterable by project
+- Optional login screen with failed-attempt banning
 
 ## Running locally
 
@@ -17,10 +18,24 @@ pip install -r requirements.txt
 python -m uvicorn main:app --reload --port 8000
 ```
 
+## Configuration
+
+All configuration is via environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `TRACKER_USER`, `TRACKER_PASSWORD` | Enable the login screen. If either is unset, the app runs with no auth. |
+| `TRACKER_SECRET_KEY` | Signing key for session cookies. If unset, a key is generated and persisted to `data/secret.key`. |
+
+## Deployment
+
+`.github/workflows/deploy.yml` deploys the app on every push to `master`. See that file for the target/steps.
+
 ## Project structure
 
 ```
-main.py            FastAPI app setup, mounts routers and static files
+main.py             FastAPI app setup, login/auth middleware, mounts routers and static files
+auth.py             Session tokens, password check, failed-login banning
 db.py               SQLite connection + schema/migrations
 models.py           Pydantic request models
 helpers.py          Shared DB helpers
@@ -28,5 +43,7 @@ routers/            One router per resource (projects, tags, entries, timer, sta
 static/
   index.html
   style.css
-  js/               ES modules (api, state, tags, projects, timer, entries, stats, tabs, main)
+  img/              Static image assets (see Credits)
+  js/               ES modules (api, state, tags, tagPicker, projects, timer, entries,
+                     editEntry, stats, tabs, format, icons, main)
 ```

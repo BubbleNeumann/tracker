@@ -32,6 +32,7 @@ LOGIN_PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="/static/img/cookie-icon.png">
 <title>Tracker - Login</title>
 <style>
   :root {{ --bg: #121212; --card-bg: #262626; --border: #444; --text: #f5f5f5; --green: #7cff2e; --red: #ff2e6d; }}
