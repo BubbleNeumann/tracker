@@ -1,9 +1,14 @@
 import { api } from "./api.js";
 import { state } from "./state.js";
-import { formatDuration, isoDate } from "./format.js";
+import { formatDuration, formatDurationLong, formatDurationNoSeconds, isoDate } from "./format.js";
+import { escapeHtml } from "./format.js";
 
 const statsProjectSelect = document.getElementById("stats-project-select");
-const statsHours = document.getElementById("stats-hours");
+const statsTotalTime = document.getElementById("stats-total-time");
+const statsSessions = document.getElementById("stats-sessions");
+const statsLongest = document.getElementById("stats-longest");
+const statsLongestLabel = document.getElementById("stats-longest-label");
+const tagStatsContainer = document.getElementById("tag-stats-container");
 const chartContainer = document.getElementById("chart-container");
 const calendarGrid = document.getElementById("calendar-grid");
 const calendarMonths = document.getElementById("calendar-months");
@@ -29,16 +34,68 @@ export function renderStatsProjectOptions() {
   statsProjectSelect.value = previousValue;
 }
 
+const TAG_COLORS = [
+  "#3fa9f5",
+  "#8a7dff",
+  "#ff5c5c",
+  "#3ddc84",
+  "#c77dff",
+  "#ff9f3f",
+  "#ffe14d",
+  "#ff5cc8",
+  "#5ce1e6",
+  "#a3ff5c",
+];
+
+function tagColor(index) {
+  return TAG_COLORS[index % TAG_COLORS.length];
+}
+
 export async function loadStats() {
   const projectId = statsProjectSelect.value || "all";
-  const [totals, daily] = await Promise.all([
+  const [totals, daily, byTag] = await Promise.all([
     api(`/api/stats?project_id=${encodeURIComponent(projectId)}`),
     api(`/api/stats/daily?project_id=${encodeURIComponent(projectId)}`),
+    api(`/api/stats/by-tag?project_id=${encodeURIComponent(projectId)}`),
   ]);
-  statsHours.textContent = totals.total_hours.toFixed(2);
+  statsTotalTime.textContent = formatDurationNoSeconds(totals.total_seconds);
+  statsSessions.textContent = totals.sessions;
+  statsLongest.textContent = formatDurationLong(totals.longest_seconds);
+  statsLongestLabel.textContent = totals.longest_label || "";
   state.dailyStats = daily;
+  renderTagStats(byTag, projectId === "all");
   renderChart();
   renderCalendar();
+}
+
+function renderTagStats(byTag, groupByProject) {
+  tagStatsContainer.innerHTML = "";
+  if (byTag.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "No tagged time yet.";
+    tagStatsContainer.appendChild(empty);
+    return;
+  }
+
+  const maxSeconds = Math.max(...byTag.map((t) => t.seconds), 1);
+  byTag.forEach((tagStat, index) => {
+    const color = tagColor(index);
+    const row = document.createElement("div");
+    row.className = "tag-stat-row";
+    const pct = Math.max((tagStat.seconds / maxSeconds) * 100, 2);
+    const label = groupByProject
+      ? `<span class="tag-stat-project">[${escapeHtml(tagStat.project_name)}]</span> ${escapeHtml(tagStat.tag)}`
+      : escapeHtml(tagStat.tag);
+    row.innerHTML = `
+      <span class="tag-stat-name" style="color:${color}">${label}</span>
+      <span class="tag-stat-bar-track">
+        <span class="tag-stat-bar-fill" style="width:${pct}%;background:${color}"></span>
+      </span>
+      <span class="tag-stat-value">${formatDurationLong(tagStat.seconds)}</span>
+    `;
+    tagStatsContainer.appendChild(row);
+  });
 }
 
 statsProjectSelect.onchange = loadStats;
@@ -55,7 +112,7 @@ function renderChart() {
   const days = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  for (let i = 59; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = isoDate(d);

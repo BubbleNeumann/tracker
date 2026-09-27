@@ -13,6 +13,11 @@ const runningTitle = document.getElementById("running-title");
 const runningElapsed = document.getElementById("running-elapsed");
 const runningTags = document.getElementById("running-tags");
 const bigStopBtn = document.getElementById("big-stop-btn");
+const otherRunningContainer = document.getElementById("other-running-timers");
+
+export function clearTitleInput() {
+  titleInput.value = "";
+}
 
 function updateStartStopUI() {
   if (state.runningEntry) {
@@ -29,9 +34,9 @@ function updateStartStopUI() {
     startStopBtn.textContent = "Start";
     startStopBtn.className = "btn-start";
     titleInput.disabled = false;
-    titleInput.value = "";
   }
   renderTags();
+  renderOtherRunning();
 }
 
 function tickElapsed() {
@@ -40,22 +45,70 @@ function tickElapsed() {
   runningElapsed.textContent = formatDuration(Math.max(0, seconds));
 }
 
+function tickOtherRunning() {
+  if (!otherRunningContainer) return;
+  otherRunningContainer.querySelectorAll("[data-start]").forEach((el) => {
+    const seconds = (Date.now() - new Date(el.dataset.start).getTime()) / 1000;
+    el.textContent = formatDuration(Math.max(0, seconds));
+  });
+}
+
+function renderOtherRunning() {
+  if (!otherRunningContainer) return;
+
+  if (state.runningEntries.length === 0) {
+    otherRunningContainer.innerHTML = "";
+    otherRunningContainer.classList.add("hidden");
+    return;
+  }
+
+  otherRunningContainer.classList.remove("hidden");
+  otherRunningContainer.innerHTML = state.runningEntries
+    .map((entry) => {
+      const project = state.allProjects.find((p) => p.id === entry.project_id);
+      const name = project ? escapeHtml(project.name) : "Unknown project";
+      const color = project ? project.color : "#888";
+      const isCurrent = state.currentProject && entry.project_id === state.currentProject.id;
+      return `
+        <div class="other-running-item${isCurrent ? " is-current" : ""}" data-project-id="${entry.project_id}" title="${name}">
+          <span class="project-dot" style="background:${color};color:${color}"></span>
+          <span class="other-running-name">${escapeHtml(entry.title)}</span>
+          <span class="other-running-elapsed" data-start="${entry.start_time}">00:00:00</span>
+        </div>
+      `;
+    })
+    .join("");
+  tickOtherRunning();
+}
+
+export async function refreshRunningEntries() {
+  state.runningEntries = await api("/api/timer/running");
+}
+
 export async function refreshCurrent() {
-  state.runningEntry = await api("/api/timer/current");
+  await refreshRunningEntries();
+  state.runningEntry = state.currentProject
+    ? state.runningEntries.find((e) => e.project_id === state.currentProject.id) || null
+    : null;
   updateStartStopUI();
   if (state.tickTimer) clearInterval(state.tickTimer);
+  if (state.otherTickTimer) clearInterval(state.otherTickTimer);
   if (state.runningEntry) {
     tickElapsed();
     state.tickTimer = setInterval(tickElapsed, 1000);
   }
+  state.otherTickTimer = setInterval(tickOtherRunning, 1000);
 }
 
 async function stopTimer() {
-  await api("/api/timer/stop", { method: "POST" });
+  if (!state.currentProject) return;
+  await api(`/api/timer/stop?project_id=${state.currentProject.id}`, { method: "POST" });
   state.runningEntry = null;
   state.selectedTags = new Set();
   if (state.tickTimer) clearInterval(state.tickTimer);
+  await refreshRunningEntries();
   updateStartStopUI();
+  titleInput.value = "";
   await loadEntries();
 }
 
@@ -69,6 +122,7 @@ async function startTimer() {
     method: "POST",
     body: JSON.stringify({ title, project_id: state.currentProject.id, tags: Array.from(state.selectedTags) }),
   });
+  await refreshRunningEntries();
   updateStartStopUI();
   tickElapsed();
   if (state.tickTimer) clearInterval(state.tickTimer);
@@ -84,3 +138,15 @@ bigStopBtn.onclick = (e) => {
 runningWidget.onclick = () => {
   if (state.runningEntry) openEditEntry(state.runningEntry, refreshCurrent);
 };
+
+if (otherRunningContainer) {
+  otherRunningContainer.onclick = (e) => {
+    const item = e.target.closest(".other-running-item");
+    if (!item || item.classList.contains("is-current")) return;
+    const projectId = Number(item.dataset.projectId);
+    const project = state.allProjects.find((p) => p.id === projectId);
+    if (project) {
+      document.dispatchEvent(new CustomEvent("switch-project", { detail: project }));
+    }
+  };
+}

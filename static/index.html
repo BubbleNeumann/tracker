@@ -25,6 +25,8 @@
   </div>
 
   <div id="timer-view" class="tab-view">
+    <div id="other-running-timers" class="other-running-timers hidden"></div>
+
     <div id="running-widget" class="card running-widget hidden">
       <div class="running-title" id="running-title"></div>
       <div class="running-elapsed" id="running-elapsed">00:00:00</div>
@@ -44,13 +46,32 @@
   </div>
 
   <div id="stats-view" class="tab-view hidden">
-    <div class="card">
+    <div class="card stats-selector-card">
       <div class="stats-selector-row">
         <label for="stats-project-select">Project</label>
         <select id="stats-project-select"></select>
       </div>
-      <div class="stats-hours" id="stats-hours">0.00</div>
-      <div class="stats-label">hours tracked</div>
+    </div>
+
+    <div class="stats-summary-grid">
+      <div class="card stat-tile">
+        <div class="stat-tile-label">Total Time</div>
+        <div class="stat-tile-value" id="stats-total-time">0h 0min</div>
+      </div>
+      <div class="card stat-tile">
+        <div class="stat-tile-label">Sessions</div>
+        <div class="stat-tile-value" id="stats-sessions">0</div>
+      </div>
+      <div class="card stat-tile">
+        <div class="stat-tile-label">Longest Session</div>
+        <div class="stat-tile-value" id="stats-longest">0h 0min</div>
+        <div class="stat-tile-sublabel" id="stats-longest-label"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title">Time per Tag</div>
+      <div id="tag-stats-container" class="tag-stats-container"></div>
     </div>
 
     <div class="card">

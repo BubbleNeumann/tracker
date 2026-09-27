@@ -5,6 +5,21 @@ export function formatDuration(seconds) {
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 }
 
+export function formatDurationLong(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h} h ${m} min`;
+  const s = Math.floor(seconds % 60);
+  if (m > 0) return `${m} min ${s} sec`;
+  return `${s} sec`;
+}
+
+export function formatDurationNoSeconds(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h} h ${m} min`;
+}
+
 export function formatTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });

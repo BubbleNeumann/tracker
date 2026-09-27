@@ -40,6 +40,7 @@ function startEditing(entry) {
     startRef: entry.start_time,
     endRef: entry.end_time,
     tags: new Set(entry.tags),
+    projectId: entry.project_id,
   };
   renderEntries();
 }
@@ -129,6 +130,13 @@ function renderEditRow(entry) {
   el.className = "entry entry-edit";
   el.onclick = (e) => e.stopPropagation();
 
+  const projectOptions = state.allProjects
+    .map(
+      (p) =>
+        `<option value="${p.id}" ${p.id === editBuffer.projectId ? "selected" : ""}>${escapeHtml(p.name)}</option>`
+    )
+    .join("");
+
   el.innerHTML = `
     <input type="text" class="edit-title-input" value="${escapeHtml(editBuffer.title)}" />
     <button class="btn-start edit-save-btn">Save</button>
@@ -144,6 +152,10 @@ function renderEditRow(entry) {
         <input type="datetime-local" class="edit-end-input" value="${editBuffer.end}" />
       </div>
     </div>
+    <div class="edit-row edit-row-project">
+      <span class="edit-date-label">Project</span>
+      <select class="edit-project-select">${projectOptions}</select>
+    </div>
     <div class="tag-list edit-row-tags"></div>
   `;
 
@@ -156,14 +168,19 @@ function renderEditRow(entry) {
   el.querySelector(".edit-end-input").oninput = (e) => {
     editBuffer.end = e.target.value;
   };
+  el.querySelector(".edit-project-select").onchange = async (e) => {
+    editBuffer.projectId = Number(e.target.value);
+    editBuffer.tags = new Set();
+    await reloadTagsAndRerender();
+  };
 
   const tagsContainer = el.querySelector(".edit-row-tags");
   const reloadTagsAndRerender = async () => {
-    state.allTags = await api(`/api/tags?project_id=${entry.project_id}`);
+    state.allTags = await api(`/api/tags?project_id=${editBuffer.projectId}`);
     renderEntries();
   };
   renderSelectableTagPills(tagsContainer, state.allTags, editBuffer.tags, renderEntries, reloadTagsAndRerender);
-  appendAddTagPill(tagsContainer, entry.project_id, editBuffer.tags, reloadTagsAndRerender);
+  appendAddTagPill(tagsContainer, editBuffer.projectId, editBuffer.tags, reloadTagsAndRerender);
 
   el.querySelector(".edit-cancel-btn").onclick = () => stopEditing();
   el.querySelector(".edit-save-btn").onclick = async () => {
@@ -172,7 +189,13 @@ function renderEditRow(entry) {
     const end_time = fromDatetimeLocalValue(editBuffer.end, editBuffer.endRef);
     await api(`/api/entries/${entry.id}`, {
       method: "PUT",
-      body: JSON.stringify({ title, start_time, end_time, tags: Array.from(editBuffer.tags) }),
+      body: JSON.stringify({
+        title,
+        start_time,
+        end_time,
+        project_id: editBuffer.projectId,
+        tags: Array.from(editBuffer.tags),
+      }),
     });
     editingEntryId = null;
     editBuffer = null;

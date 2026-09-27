@@ -2,7 +2,7 @@ import { api } from "./api.js";
 import { state } from "./state.js";
 import { escapeHtml } from "./format.js";
 import { loadEntries } from "./entries.js";
-import { refreshCurrent } from "./timer.js";
+import { refreshCurrent, clearTitleInput } from "./timer.js";
 import { renderStatsProjectOptions } from "./stats.js";
 import { loadTags, renderTags } from "./tags.js";
 import { PENCIL_ICON } from "./icons.js";
@@ -17,6 +17,20 @@ const newProjectName = document.getElementById("new-project-name");
 const newProjectColor = document.getElementById("new-project-color");
 const newProjectCancel = document.getElementById("new-project-cancel");
 const newProjectCreate = document.getElementById("new-project-create");
+
+export async function switchToProject(project) {
+  state.currentProject = project;
+  clearTitleInput();
+  renderProjectSelector();
+  renderStatsProjectOptions();
+  state.selectedTags = new Set();
+  await loadTags();
+  renderTags();
+  await loadEntries();
+  await refreshCurrent();
+}
+
+document.addEventListener("switch-project", (e) => switchToProject(e.detail));
 
 export async function loadProjects() {
   state.allProjects = await api("/api/projects");
@@ -51,15 +65,8 @@ function renderProjectSelector() {
       <span class="project-option-delete" data-id="${project.id}" title="Rename or delete project">${PENCIL_ICON}</span>
     `;
     opt.querySelector("span:nth-child(2)").onclick = async () => {
-      state.currentProject = project;
       projectDropdown.classList.add("hidden");
-      renderProjectSelector();
-      renderStatsProjectOptions();
-      state.selectedTags = new Set();
-      await loadTags();
-      renderTags();
-      await loadEntries();
-      await refreshCurrent();
+      await switchToProject(project);
     };
     opt.querySelector(".project-option-delete").onclick = async (e) => {
       e.stopPropagation();
@@ -79,6 +86,7 @@ function renderProjectSelector() {
         }
       }
       await loadProjects();
+      clearTitleInput();
       state.selectedTags = new Set();
       await loadTags();
       renderTags();
@@ -116,6 +124,7 @@ newProjectCreate.onclick = async () => {
   });
   newProjectModal.classList.add("hidden");
   state.currentProject = project;
+  clearTitleInput();
   await loadProjects();
   state.selectedTags = new Set();
   await loadTags();

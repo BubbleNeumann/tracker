@@ -8,12 +8,24 @@ router = APIRouter(prefix="/api/timer", tags=["timer"])
 
 
 @router.get("/current")
-def current_timer():
+def current_timer(project_id: int):
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM entries WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1"
+        "SELECT * FROM entries WHERE end_time IS NULL AND project_id = ? ORDER BY start_time DESC LIMIT 1",
+        (project_id,),
     ).fetchone()
     result = serialize_entry(conn, row) if row else None
+    conn.close()
+    return result
+
+
+@router.get("/running")
+def running_timers():
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM entries WHERE end_time IS NULL ORDER BY start_time DESC"
+    ).fetchall()
+    result = [serialize_entry(conn, r) for r in rows]
     conn.close()
     return result
 
@@ -21,10 +33,13 @@ def current_timer():
 @router.post("/start")
 def start_timer(payload: TimerStart):
     conn = get_conn()
-    running = conn.execute("SELECT id FROM entries WHERE end_time IS NULL").fetchone()
+    running = conn.execute(
+        "SELECT id FROM entries WHERE end_time IS NULL AND project_id = ?",
+        (payload.project_id,),
+    ).fetchone()
     if running:
         conn.close()
-        raise HTTPException(400, "A timer is already running")
+        raise HTTPException(400, "A timer is already running for this project")
 
     title = payload.title.strip() or "Untitled"
     cur = conn.execute(
@@ -46,14 +61,15 @@ def start_timer(payload: TimerStart):
 
 
 @router.post("/stop")
-def stop_timer():
+def stop_timer(project_id: int):
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM entries WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1"
+        "SELECT * FROM entries WHERE end_time IS NULL AND project_id = ? ORDER BY start_time DESC LIMIT 1",
+        (project_id,),
     ).fetchone()
     if not row:
         conn.close()
-        raise HTTPException(400, "No timer is running")
+        raise HTTPException(400, "No timer is running for this project")
     conn.execute(
         "UPDATE entries SET end_time = ? WHERE id = ?", (now_iso(), row["id"])
     )
