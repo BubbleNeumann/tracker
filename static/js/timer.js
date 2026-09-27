@@ -3,6 +3,7 @@ import { state } from "./state.js";
 import { escapeHtml, formatDuration } from "./format.js";
 import { renderTags } from "./tags.js";
 import { loadEntries } from "./entries.js";
+import { openEditEntry } from "./editEntry.js";
 
 const titleInput = document.getElementById("title-input");
 const startStopBtn = document.getElementById("start-stop-btn");
@@ -75,4 +76,11 @@ async function startTimer() {
 }
 
 startStopBtn.onclick = () => (state.runningEntry ? stopTimer() : startTimer());
-bigStopBtn.onclick = () => stopTimer();
+bigStopBtn.onclick = (e) => {
+  e.stopPropagation();
+  stopTimer();
+};
+
+runningWidget.onclick = () => {
+  if (state.runningEntry) openEditEntry(state.runningEntry, refreshCurrent);
+};

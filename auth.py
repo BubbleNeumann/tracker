@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from db import get_conn
@@ -65,33 +66,52 @@ def verify_session_token(token: str) -> str | None:
     return username
 
 
-def is_banned(ip: str) -> bool:
+def compute_fingerprint(user_agent: str, accept_language: str) -> str:
+    """A lightweight, header-based stand-in for a device identity. Not
+    cryptographically robust (headers can be spoofed), but cheap to check
+    and enough to catch the common case of a banned client just switching
+    IP address without changing browser/device."""
+    raw = f"{user_agent}|{accept_language}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def is_banned(ip: str, fingerprint: str) -> bool:
     conn = get_conn()
     row = conn.execute(
-        "SELECT banned FROM login_security WHERE ip = ?", (ip,)
+        """
+        SELECT 1 FROM login_security
+        WHERE banned = 1 AND (ip = ? OR device_fingerprint = ?)
+        LIMIT 1
+        """,
+        (ip, fingerprint),
     ).fetchone()
     conn.close()
-    return bool(row and row["banned"])
+    return row is not None
 
 
-def record_failed_attempt(ip: str) -> bool:
+def record_failed_attempt(ip: str, fingerprint: str) -> bool:
     """Increments the failed-attempt counter for `ip`. Returns True if this
     attempt caused the IP to become banned."""
     conn = get_conn()
     conn.execute(
         """
-        INSERT INTO login_security (ip, failed_attempts, banned)
-        VALUES (?, 1, 0)
-        ON CONFLICT(ip) DO UPDATE SET failed_attempts = failed_attempts + 1
+        INSERT INTO login_security (ip, failed_attempts, banned, device_fingerprint)
+        VALUES (?, 1, 0, ?)
+        ON CONFLICT(ip) DO UPDATE SET
+            failed_attempts = failed_attempts + 1,
+            device_fingerprint = excluded.device_fingerprint
         """,
-        (ip,),
+        (ip, fingerprint),
     )
     row = conn.execute(
         "SELECT failed_attempts FROM login_security WHERE ip = ?", (ip,)
     ).fetchone()
     just_banned = False
     if row and row["failed_attempts"] >= MAX_FAILED_ATTEMPTS:
-        conn.execute("UPDATE login_security SET banned = 1 WHERE ip = ?", (ip,))
+        conn.execute(
+            "UPDATE login_security SET banned = 1, banned_at = ? WHERE ip = ?",
+            (datetime.now(timezone.utc).isoformat(timespec="seconds"), ip),
+        )
         just_banned = True
     conn.commit()
     conn.close()
@@ -101,7 +121,11 @@ def record_failed_attempt(ip: str) -> bool:
 def reset_attempts(ip: str) -> None:
     conn = get_conn()
     conn.execute(
-        "INSERT OR REPLACE INTO login_security (ip, failed_attempts, banned) VALUES (?, 0, 0)",
+        """
+        INSERT INTO login_security (ip, failed_attempts, banned)
+        VALUES (?, 0, 0)
+        ON CONFLICT(ip) DO UPDATE SET failed_attempts = 0, banned = 0, banned_at = NULL
+        """,
         (ip,),
     )
     conn.commit()

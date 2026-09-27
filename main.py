@@ -61,6 +61,13 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _fingerprint(request: Request) -> str:
+    return auth.compute_fingerprint(
+        request.headers.get("user-agent", ""),
+        request.headers.get("accept-language", ""),
+    )
+
+
 def _banned_response() -> Response:
     # Deliberately minimal: no template rendering, no DB lookups beyond the
     # ban check itself, so a banned IP can't cost us much even under a flood.
@@ -73,7 +80,7 @@ async def enforce_login(request: Request, call_next):
         return await call_next(request)
 
     ip = _client_ip(request)
-    if auth.is_banned(ip):
+    if auth.is_banned(ip, _fingerprint(request)):
         return _banned_response()
 
     if request.url.path == "/login":
@@ -95,7 +102,8 @@ def login_form():
 @app.post("/login")
 async def login_submit(request: Request):
     ip = _client_ip(request)
-    if auth.is_banned(ip):
+    fingerprint = _fingerprint(request)
+    if auth.is_banned(ip, fingerprint):
         return _banned_response()
 
     form = await request.form()
@@ -107,7 +115,7 @@ async def login_submit(request: Request):
     )
 
     if not valid:
-        just_banned = auth.record_failed_attempt(ip)
+        just_banned = auth.record_failed_attempt(ip, fingerprint)
         if just_banned:
             return _banned_response()
         return HTMLResponse(
@@ -133,9 +141,21 @@ app.include_router(entries.router)
 app.include_router(timer.router)
 app.include_router(stats.router)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+class NoCacheStaticFiles(StaticFiles):
+    """Forces browsers to always revalidate (via ETag/Last-Modified) instead
+    of serving a stale cached copy of JS/CSS after a deploy."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", NoCacheStaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
 def index():
-    return FileResponse("static/index.html")
+    response = FileResponse("static/index.html")
+    response.headers["Cache-Control"] = "no-cache"
+    return response

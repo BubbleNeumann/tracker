@@ -6,7 +6,17 @@ class ProjectCreate(BaseModel):
     color: str = "#7cff2e"
 
 
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    color: str | None = None
+
+
 class TagCreate(BaseModel):
+    name: str
+    project_id: int
+
+
+class TagUpdate(BaseModel):
     name: str
 
 

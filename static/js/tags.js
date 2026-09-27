@@ -1,10 +1,15 @@
 import { api } from "./api.js";
 import { state } from "./state.js";
+import { PENCIL_ICON } from "./icons.js";
 
 const tagListEl = document.getElementById("tag-list");
 
 export async function loadTags() {
-  state.allTags = await api("/api/tags");
+  if (!state.currentProject) {
+    state.allTags = [];
+    return;
+  }
+  state.allTags = await api(`/api/tags?project_id=${state.currentProject.id}`);
 }
 
 export function renderTags() {
@@ -22,19 +27,32 @@ export function renderTags() {
     };
     pill.appendChild(label);
 
-    const remove = document.createElement("span");
-    remove.className = "tag-remove";
-    remove.textContent = "×";
-    remove.title = "Delete tag";
-    remove.onclick = async (e) => {
+    const edit = document.createElement("span");
+    edit.className = "tag-remove";
+    edit.innerHTML = PENCIL_ICON;
+    edit.title = "Rename or delete tag";
+    edit.onclick = async (e) => {
       e.stopPropagation();
-      if (!confirm(`Delete tag "${tag.name}"? It will be removed from all entries.`)) return;
-      await api(`/api/tags/${tag.id}`, { method: "DELETE" });
-      state.selectedTags.delete(tag.name);
+      const newName = prompt("Rename tag (leave blank to delete):", tag.name);
+      if (newName === null) return;
+      if (!newName.trim()) {
+        if (!confirm(`Delete tag "${tag.name}"? It will be removed from all entries.`)) return;
+        await api(`/api/tags/${tag.id}`, { method: "DELETE" });
+        state.selectedTags.delete(tag.name);
+      } else if (newName.trim() !== tag.name) {
+        await api(`/api/tags/${tag.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (state.selectedTags.has(tag.name)) {
+          state.selectedTags.delete(tag.name);
+          state.selectedTags.add(newName.trim());
+        }
+      }
       await loadTags();
       renderTags();
     };
-    pill.appendChild(remove);
+    pill.appendChild(edit);
 
     tagListEl.appendChild(pill);
   }
@@ -45,7 +63,10 @@ export function renderTags() {
   addPill.onclick = async () => {
     const name = prompt("New tag name:");
     if (!name || !name.trim()) return;
-    const tag = await api("/api/tags", { method: "POST", body: JSON.stringify({ name: name.trim() }) });
+    const tag = await api("/api/tags", {
+      method: "POST",
+      body: JSON.stringify({ name: name.trim(), project_id: state.currentProject.id }),
+    });
     await loadTags();
     state.selectedTags.add(tag.name);
     renderTags();

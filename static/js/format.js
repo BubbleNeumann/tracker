@@ -19,6 +19,19 @@ export function isoDate(d) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
+export function toDatetimeLocalValue(iso) {
+  // "2026-09-19T01:32:00-04:00" -> "2026-09-19T01:32" (what <input type="datetime-local"> expects)
+  return iso.slice(0, 16);
+}
+
+export function fromDatetimeLocalValue(localValue, referenceIso) {
+  // Re-attach the original timezone offset so the round trip stays consistent
+  // with every other timestamp already stored for this entry.
+  const match = referenceIso.match(/([+-]\d{2}:\d{2}|Z)$/);
+  const offset = match ? match[1] : "";
+  return `${localValue}:00${offset}`;
+}
+
 export function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;

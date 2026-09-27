@@ -5,8 +5,8 @@ import { loadEntries } from "./entries.js";
 import "./tabs.js";
 
 async function init() {
-  await loadTags();
   await loadProjects();
+  await loadTags();
   await refreshCurrent();
   await loadEntries();
 }

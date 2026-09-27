@@ -33,7 +33,7 @@ def start_timer(payload: TimerStart):
     )
     entry_id = cur.lastrowid
     for tag_name in payload.tags:
-        tag_id = get_or_create_tag(conn, tag_name)
+        tag_id = get_or_create_tag(conn, tag_name, payload.project_id)
         conn.execute(
             "INSERT OR IGNORE INTO entry_tags (entry_id, tag_id) VALUES (?, ?)",
             (entry_id, tag_id),

@@ -4,6 +4,8 @@ import { escapeHtml } from "./format.js";
 import { loadEntries } from "./entries.js";
 import { refreshCurrent } from "./timer.js";
 import { renderStatsProjectOptions } from "./stats.js";
+import { loadTags, renderTags } from "./tags.js";
+import { PENCIL_ICON } from "./icons.js";
 
 const projectSelector = document.getElementById("project-selector");
 const projectDot = document.getElementById("project-dot");
@@ -41,22 +43,40 @@ function renderProjectSelector() {
     opt.innerHTML = `
       <span class="project-dot" style="background:${project.color};color:${project.color}"></span>
       <span>${escapeHtml(project.name)}</span>
-      <span class="project-option-delete" data-id="${project.id}">delete</span>
+      <span class="project-option-delete" data-id="${project.id}" title="Rename or delete project">${PENCIL_ICON}</span>
     `;
     opt.querySelector("span:nth-child(2)").onclick = async () => {
       state.currentProject = project;
       projectDropdown.classList.add("hidden");
       renderProjectSelector();
       renderStatsProjectOptions();
+      state.selectedTags = new Set();
+      await loadTags();
+      renderTags();
       await loadEntries();
       await refreshCurrent();
     };
     opt.querySelector(".project-option-delete").onclick = async (e) => {
       e.stopPropagation();
-      if (!confirm(`Delete project "${project.name}"? This deletes its time entries too.`)) return;
-      await api(`/api/projects/${project.id}`, { method: "DELETE" });
-      if (state.currentProject && state.currentProject.id === project.id) state.currentProject = null;
+      const newName = prompt("Rename project (leave blank to delete):", project.name);
+      if (newName === null) return;
+      if (!newName.trim()) {
+        if (!confirm(`Delete project "${project.name}"? This deletes its time entries too.`)) return;
+        await api(`/api/projects/${project.id}`, { method: "DELETE" });
+        if (state.currentProject && state.currentProject.id === project.id) state.currentProject = null;
+      } else if (newName.trim() !== project.name) {
+        const updated = await api(`/api/projects/${project.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (state.currentProject && state.currentProject.id === project.id) {
+          state.currentProject = updated;
+        }
+      }
       await loadProjects();
+      state.selectedTags = new Set();
+      await loadTags();
+      renderTags();
       await loadEntries();
       await refreshCurrent();
     };
@@ -92,6 +112,9 @@ newProjectCreate.onclick = async () => {
   newProjectModal.classList.add("hidden");
   state.currentProject = project;
   await loadProjects();
+  state.selectedTags = new Set();
+  await loadTags();
+  renderTags();
   await loadEntries();
   await refreshCurrent();
 };

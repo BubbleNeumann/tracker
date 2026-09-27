@@ -5,12 +5,16 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
-def get_or_create_tag(conn, name: str) -> int:
+def get_or_create_tag(conn, name: str, project_id: int) -> int:
     name = name.strip()
-    row = conn.execute("SELECT id FROM tags WHERE name = ?", (name,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM tags WHERE name = ? AND project_id = ?", (name, project_id)
+    ).fetchone()
     if row:
         return row["id"]
-    cur = conn.execute("INSERT INTO tags (name) VALUES (?)", (name,))
+    cur = conn.execute(
+        "INSERT INTO tags (name, project_id) VALUES (?, ?)", (name, project_id)
+    )
     return cur.lastrowid
 
 

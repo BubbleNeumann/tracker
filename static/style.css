@@ -126,13 +126,22 @@ body {
 
 .tag-remove {
   color: var(--text-dim);
-  font-size: 14px;
   line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tag-remove svg,
+.delete-btn svg,
+.project-option-delete svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .tag-remove:hover {
-  color: var(--red);
+  color: #fff;
 }
 
 .tag-pill.selected .tag-remove {
@@ -165,7 +174,108 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-bottom: none;
-  padding: 12px 16px;
+  padding: 12px 56px 12px 16px;
+  cursor: pointer;
+  position: relative;
+}
+
+.entry:hover {
+  background: #2d2d2d;
+}
+
+.entry.entry-edit {
+  cursor: default;
+  padding: 16px;
+}
+
+.entry.entry-edit:hover {
+  background: var(--card-bg);
+}
+
+.entry-edit {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas:
+    "title save cancel"
+    "dates dates dates"
+    "tags tags tags";
+  column-gap: 12px;
+  row-gap: 14px;
+  align-items: center;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-title-input {
+  grid-area: title;
+  background: #161616;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.edit-title-input:focus {
+  outline: none;
+  border-color: #555;
+}
+
+.edit-save-btn {
+  grid-area: save;
+}
+
+.edit-cancel-btn {
+  grid-area: cancel;
+}
+
+.edit-row-dates {
+  grid-area: dates;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.edit-row-tags {
+  grid-area: tags;
+  margin-top: 0;
+}
+
+.edit-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.edit-date-label {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.edit-date-sep {
+  color: var(--text-dim);
+}
+
+.edit-start-input,
+.edit-end-input {
+  background: #161616;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 13px;
+  color-scheme: dark;
+}
+
+.edit-start-input:focus,
+.edit-end-input:focus {
+  outline: none;
+  border-color: #555;
 }
 
 .day-group .entry:last-child {
@@ -180,8 +290,16 @@ body {
 .entry-title {
   font-size: 14px;
   margin-bottom: 6px;
+}
+
+.entry-title-actions {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
 }
 
 .entry-meta {
@@ -216,9 +334,30 @@ body {
   background: none;
   border: none;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
-.delete-btn:hover { color: #b33a3a; }
+.delete-btn:hover { color: var(--red); }
+
+.edit-entry-btn {
+  color: var(--text-dim);
+  cursor: pointer;
+  background: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.edit-entry-btn:hover {
+  color: var(--text);
+}
+
+.edit-entry-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
 
 .empty-state {
   text-align: center;
@@ -235,6 +374,7 @@ body {
   box-shadow: 0 0 24px -4px rgba(124, 255, 46, 0.45);
   text-align: center;
   padding: 28px 16px;
+  cursor: pointer;
 }
 
 .running-title {
@@ -360,11 +500,13 @@ body {
 .project-option-delete {
   margin-left: auto;
   color: var(--text-dim);
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .project-option-delete:hover {
-  color: var(--red);
+  color: var(--text);
 }
 
 .tabs {
@@ -423,13 +565,19 @@ body {
   font-size: 15px;
 }
 
-#new-project-name {
+#new-project-name,
+#edit-entry-title {
   background: #161616;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 10px 12px;
   color: var(--text);
   font-size: 14px;
+}
+
+#edit-entry-title:focus {
+  outline: none;
+  border-color: #555;
 }
 
 #new-project-color {
@@ -684,11 +832,11 @@ body {
 @media (max-width: 600px) {
   body {
     padding: 20px 12px;
-    font-size: 17px;
+    font-size: 19px;
   }
 
   .page {
-    gap: 14px;
+    gap: 16px;
   }
 
   .header-row {
@@ -697,11 +845,11 @@ body {
   }
 
   .project-selector {
-    padding: 8px 0;
+    padding: 9px 0;
   }
 
   .project-name {
-    font-size: 17px;
+    font-size: 19px;
   }
 
   .project-dropdown {
@@ -712,75 +860,75 @@ body {
   }
 
   .project-option {
-    padding: 14px 16px;
-    font-size: 16px;
+    padding: 16px 18px;
+    font-size: 17px;
   }
 
   .btn-link {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .tab-btn {
-    font-size: 16px;
-    padding: 12px 4px;
+    font-size: 18px;
+    padding: 13px 4px;
   }
 
   .card {
-    padding: 18px;
+    padding: 20px;
   }
 
   .timer-row {
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 16px;
   }
 
   #title-input {
     flex-basis: 100%;
-    font-size: 16px;
-    padding: 13px 14px;
+    font-size: 17px;
+    padding: 15px 16px;
   }
 
   .btn-start, .btn-stop {
     flex: 1;
-    font-size: 16px;
-    padding: 13px 22px;
+    font-size: 17px;
+    padding: 15px 24px;
   }
 
   .tag-list {
-    gap: 10px;
-    margin-top: 16px;
+    gap: 11px;
+    margin-top: 18px;
   }
 
   .tag-pill {
-    font-size: 14px;
-    padding: 7px 16px;
+    font-size: 15px;
+    padding: 8px 18px;
   }
 
   .running-elapsed {
-    font-size: 44px;
+    font-size: 48px;
   }
 
   .running-title {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .btn-big-stop {
     width: 100%;
-    padding: 16px 0;
-    font-size: 22px;
+    padding: 18px 0;
+    font-size: 24px;
   }
 
   .day-header {
-    font-size: 15px;
-    padding: 12px 4px;
+    font-size: 16px;
+    padding: 13px 4px;
   }
 
   .entry {
-    padding: 14px 18px;
+    padding: 16px 20px;
   }
 
   .entry-title {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .entry-title span:first-child {
@@ -789,20 +937,20 @@ body {
   }
 
   .entry-duration, .entry-time {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .entry-tag {
-    font-size: 13px;
-    padding: 3px 11px;
+    font-size: 14px;
+    padding: 4px 12px;
   }
 
   .stats-hours {
-    font-size: 46px;
+    font-size: 50px;
   }
 
   .stats-label, .chart-title {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .stats-selector-row {
@@ -810,8 +958,8 @@ body {
   }
 
   #stats-project-select {
-    font-size: 16px;
-    padding: 10px 12px;
+    font-size: 17px;
+    padding: 11px 13px;
   }
 
   .modal {
@@ -819,21 +967,68 @@ body {
   }
 
   .modal-title {
-    font-size: 17px;
+    font-size: 18px;
+  }
+
+  .entry.entry-edit {
+    padding: 16px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "title title"
+      "dates dates"
+      "tags tags"
+      "cancel save";
+    row-gap: 16px;
+  }
+
+  .edit-title-input {
+    font-size: 16px;
+    padding: 13px 14px;
+  }
+
+  .edit-save-btn,
+  .edit-cancel-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .edit-save-btn {
+    padding: 12px 0;
+  }
+
+  .edit-row-dates {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .edit-date-sep {
+    display: none;
+  }
+
+  .edit-date-group {
+    justify-content: space-between;
+  }
+
+  .edit-start-input,
+  .edit-end-input {
+    flex: 1;
+    font-size: 14px;
+    padding: 10px 12px;
   }
 }
 
 @media (max-width: 380px) {
   .running-elapsed {
-    font-size: 32px;
+    font-size: 36px;
   }
 
   .tag-list {
-    gap: 8px;
+    gap: 9px;
   }
 
   .tag-pill {
-    font-size: 12px;
-    padding: 4px 10px;
+    font-size: 13px;
+    padding: 5px 12px;
   }
 }
