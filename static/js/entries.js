@@ -17,6 +17,10 @@ let lastEntries = [];
 let editingEntryId = null;
 let editBuffer = null;
 
+export function isEditingEntry() {
+  return editingEntryId !== null;
+}
+
 export async function loadEntries() {
   if (!state.currentProject) {
     lastEntries = [];

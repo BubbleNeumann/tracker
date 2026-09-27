@@ -20,6 +20,11 @@ const newProjectCreate = document.getElementById("new-project-create");
 
 export async function loadProjects() {
   state.allProjects = await api("/api/projects");
+  if (state.currentProject) {
+    // Reflect a rename/delete made from another tab or device.
+    state.currentProject =
+      state.allProjects.find((p) => p.id === state.currentProject.id) || null;
+  }
   if (!state.currentProject && state.allProjects.length > 0) {
     state.currentProject = state.allProjects[0];
   }
