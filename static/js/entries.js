@@ -9,6 +9,7 @@ import {
   toDatetimeLocalValue,
 } from "./format.js";
 import { PENCIL_ICON, TRASH_ICON } from "./icons.js";
+import { appendAddTagPill, renderSelectableTagPills } from "./tagPicker.js";
 
 const entriesContainer = document.getElementById("entries-container");
 
@@ -153,17 +154,12 @@ function renderEditRow(entry) {
   };
 
   const tagsContainer = el.querySelector(".edit-row-tags");
-  for (const tag of state.allTags) {
-    const pill = document.createElement("div");
-    pill.className = "tag-pill" + (editBuffer.tags.has(tag.name) ? " selected" : "");
-    pill.textContent = tag.name;
-    pill.onclick = () => {
-      if (editBuffer.tags.has(tag.name)) editBuffer.tags.delete(tag.name);
-      else editBuffer.tags.add(tag.name);
-      renderEntries();
-    };
-    tagsContainer.appendChild(pill);
-  }
+  const reloadTagsAndRerender = async () => {
+    state.allTags = await api(`/api/tags?project_id=${entry.project_id}`);
+    renderEntries();
+  };
+  renderSelectableTagPills(tagsContainer, state.allTags, editBuffer.tags, renderEntries, reloadTagsAndRerender);
+  appendAddTagPill(tagsContainer, entry.project_id, editBuffer.tags, reloadTagsAndRerender);
 
   el.querySelector(".edit-cancel-btn").onclick = () => stopEditing();
   el.querySelector(".edit-save-btn").onclick = async () => {

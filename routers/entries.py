@@ -1,8 +1,20 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 
 from db import get_conn
 from helpers import get_or_create_tag, serialize_entry
 from models import EntryCreate, EntryUpdate
+
+
+def _validate_time_order(start_time: str, end_time: str):
+    try:
+        start = datetime.fromisoformat(start_time)
+        end = datetime.fromisoformat(end_time)
+    except ValueError:
+        raise HTTPException(400, "Invalid start_time or end_time")
+    if end <= start:
+        raise HTTPException(400, "end_time must be after start_time")
 
 router = APIRouter(prefix="/api/entries", tags=["entries"])
 
@@ -26,6 +38,7 @@ def list_entries(project_id: int | None = None):
 
 @router.post("")
 def create_entry(payload: EntryCreate):
+    _validate_time_order(payload.start_time, payload.end_time)
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO entries (title, start_time, end_time, project_id) VALUES (?, ?, ?, ?)",
@@ -57,6 +70,14 @@ def update_entry(entry_id: int, payload: EntryUpdate):
     start_time = payload.start_time if payload.start_time is not None else row["start_time"]
     end_time = payload.end_time if payload.end_time is not None else row["end_time"]
     project_id = payload.project_id if payload.project_id is not None else row["project_id"]
+
+    if end_time is not None:
+        try:
+            _validate_time_order(start_time, end_time)
+        except HTTPException:
+            conn.close()
+            raise
+
     conn.execute(
         "UPDATE entries SET title = ?, start_time = ?, end_time = ?, project_id = ? WHERE id = ?",
         (title, start_time, end_time, project_id, entry_id),

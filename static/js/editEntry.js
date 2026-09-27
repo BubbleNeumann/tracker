@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { state } from "./state.js";
+import { appendAddTagPill, renderSelectableTagPills } from "./tagPicker.js";
 
 const modal = document.getElementById("edit-entry-modal");
 const titleInput = document.getElementById("edit-entry-title");
@@ -11,36 +12,15 @@ let editingEntry = null;
 let editTags = new Set();
 let onSaved = null;
 
+async function reloadTagsAndRerender() {
+  state.allTags = await api(`/api/tags?project_id=${editingEntry.project_id}`);
+  renderEditTags();
+}
+
 function renderEditTags() {
   tagsContainer.innerHTML = "";
-  for (const tag of state.allTags) {
-    const pill = document.createElement("div");
-    pill.className = "tag-pill" + (editTags.has(tag.name) ? " selected" : "");
-    pill.textContent = tag.name;
-    pill.onclick = () => {
-      if (editTags.has(tag.name)) editTags.delete(tag.name);
-      else editTags.add(tag.name);
-      renderEditTags();
-    };
-    tagsContainer.appendChild(pill);
-  }
-
-  const addPill = document.createElement("div");
-  addPill.className = "tag-pill add-tag";
-  addPill.textContent = "+ New tag";
-  addPill.onclick = async () => {
-    const name = prompt("New tag name:");
-    if (!name || !name.trim()) return;
-    const projectId = editingEntry.project_id;
-    const tag = await api("/api/tags", {
-      method: "POST",
-      body: JSON.stringify({ name: name.trim(), project_id: projectId }),
-    });
-    state.allTags = await api(`/api/tags?project_id=${projectId}`);
-    editTags.add(tag.name);
-    renderEditTags();
-  };
-  tagsContainer.appendChild(addPill);
+  renderSelectableTagPills(tagsContainer, state.allTags, editTags, renderEditTags, reloadTagsAndRerender);
+  appendAddTagPill(tagsContainer, editingEntry.project_id, editTags, reloadTagsAndRerender);
 }
 
 export function openEditEntry(entry, onSavedCallback) {

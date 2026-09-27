@@ -1,3 +1,4 @@
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -202,8 +203,25 @@ def init_db():
             "UPDATE entries SET project_id = ? WHERE project_id IS NULL", (default_id,)
         )
 
-    _migrate_tags_to_per_project(conn)
-    _repair_entry_tags_fk_if_broken(conn)
-
     conn.commit()
+
+    # The migrations below rename/recreate tables across several statements
+    # that are not guaranteed to be atomic (SQLite's Python driver has
+    # historically auto-committed pending DDL). Back up the file first so a
+    # crash or error mid-migration can be rolled back to a known-good state
+    # instead of leaving stray *_old tables behind.
+    backup_path = DB_PATH.with_suffix(".db.bak")
     conn.close()
+    shutil.copy2(DB_PATH, backup_path)
+    conn = get_conn()
+    try:
+        _migrate_tags_to_per_project(conn)
+        _repair_entry_tags_fk_if_broken(conn)
+        conn.commit()
+        conn.close()
+    except Exception:
+        conn.close()
+        shutil.copy2(backup_path, DB_PATH)
+        raise
+    finally:
+        backup_path.unlink(missing_ok=True)
