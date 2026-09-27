@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tracker</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page">
+  <div class="header-row">
+    <div id="project-selector" class="project-selector">
+      <span id="project-dot" class="project-dot"></span>
+      <span id="project-name" class="project-name">Loading...</span>
+      <span class="chevron">▾</span>
+    </div>
+    <div id="project-dropdown" class="project-dropdown hidden"></div>
+    <button id="new-project-btn" class="btn-link">+ New Project</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="timer">Timer</button>
+    <button class="tab-btn" data-tab="stats">Statistics</button>
+  </div>
+
+  <div id="timer-view" class="tab-view">
+    <div id="running-widget" class="card running-widget hidden">
+      <div class="running-title" id="running-title"></div>
+      <div class="running-elapsed" id="running-elapsed">00:00:00</div>
+      <div class="running-tags" id="running-tags"></div>
+      <button id="big-stop-btn" class="btn-big-stop">Stop</button>
+    </div>
+
+    <div id="idle-card" class="card timer-card">
+      <div class="timer-row">
+        <input id="title-input" type="text" placeholder="Set a title to your timer" />
+        <button id="start-stop-btn" class="btn-start">Start</button>
+      </div>
+      <div id="tag-list" class="tag-list"></div>
+    </div>
+
+    <div id="entries-container"></div>
+  </div>
+
+  <div id="stats-view" class="tab-view hidden">
+    <div class="card">
+      <div class="stats-selector-row">
+        <label for="stats-project-select">Project</label>
+        <select id="stats-project-select"></select>
+      </div>
+      <div class="stats-hours" id="stats-hours">0.00</div>
+      <div class="stats-label">hours tracked</div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title">Daily Activity</div>
+      <div id="chart-container" class="chart-container"></div>
+    </div>
+
+    <div class="card">
+      <div class="calendar-header">
+        <div class="chart-title">Calendar</div>
+        <div class="calendar-nav">
+          <button id="calendar-prev" class="btn-nav">◀</button>
+          <button id="calendar-today" class="btn-nav btn-nav-today">●</button>
+          <button id="calendar-next" class="btn-nav">▶</button>
+        </div>
+      </div>
+      <div class="calendar-body">
+        <div class="calendar-weekdays">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="calendar-scroll">
+          <div id="calendar-grid" class="calendar-grid"></div>
+          <div id="calendar-months" class="calendar-months"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="new-project-modal" class="modal-backdrop hidden">
+  <div class="modal card">
+    <div class="modal-title">New Project</div>
+    <input id="new-project-name" type="text" placeholder="Project name" />
+    <input id="new-project-color" type="color" value="#7cff2e" />
+    <div class="modal-actions">
+      <button id="new-project-cancel" class="btn-link">Cancel</button>
+      <button id="new-project-create" class="btn-start">Create</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
