@@ -684,10 +684,11 @@ body {
 @media (max-width: 600px) {
   body {
     padding: 20px 12px;
+    font-size: 17px;
   }
 
   .page {
-    gap: 12px;
+    gap: 14px;
   }
 
   .header-row {
@@ -696,7 +697,11 @@ body {
   }
 
   .project-selector {
-    padding: 6px 0;
+    padding: 8px 0;
+  }
+
+  .project-name {
+    font-size: 17px;
   }
 
   .project-dropdown {
@@ -706,29 +711,76 @@ body {
     width: 100%;
   }
 
+  .project-option {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+
+  .btn-link {
+    font-size: 15px;
+  }
+
+  .tab-btn {
+    font-size: 16px;
+    padding: 12px 4px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
   .timer-row {
     flex-wrap: wrap;
+    gap: 14px;
   }
 
   #title-input {
     flex-basis: 100%;
+    font-size: 16px;
+    padding: 13px 14px;
   }
 
   .btn-start, .btn-stop {
     flex: 1;
+    font-size: 16px;
+    padding: 13px 22px;
+  }
+
+  .tag-list {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .tag-pill {
+    font-size: 14px;
+    padding: 7px 16px;
   }
 
   .running-elapsed {
-    font-size: 40px;
+    font-size: 44px;
+  }
+
+  .running-title {
+    font-size: 16px;
   }
 
   .btn-big-stop {
     width: 100%;
-    padding: 14px 0;
+    padding: 16px 0;
+    font-size: 22px;
+  }
+
+  .day-header {
+    font-size: 15px;
+    padding: 12px 4px;
+  }
+
+  .entry {
+    padding: 14px 18px;
   }
 
   .entry-title {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .entry-title span:first-child {
@@ -736,16 +788,38 @@ body {
     padding-right: 8px;
   }
 
+  .entry-duration, .entry-time {
+    font-size: 14px;
+  }
+
+  .entry-tag {
+    font-size: 13px;
+    padding: 3px 11px;
+  }
+
   .stats-hours {
-    font-size: 42px;
+    font-size: 46px;
+  }
+
+  .stats-label, .chart-title {
+    font-size: 15px;
   }
 
   .stats-selector-row {
     flex-wrap: wrap;
   }
 
+  #stats-project-select {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
   .modal {
     width: 92vw;
+  }
+
+  .modal-title {
+    font-size: 17px;
   }
 }
 

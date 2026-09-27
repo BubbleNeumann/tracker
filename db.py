@@ -45,6 +45,12 @@ def init_db():
 
         CREATE INDEX IF NOT EXISTS idx_entries_project_start
             ON entries(project_id, start_time);
+
+        CREATE TABLE IF NOT EXISTS login_security (
+            ip TEXT PRIMARY KEY,
+            failed_attempts INTEGER NOT NULL DEFAULT 0,
+            banned INTEGER NOT NULL DEFAULT 0
+        );
         """
     )
 
