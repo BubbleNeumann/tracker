@@ -17,7 +17,8 @@ class TagCreate(BaseModel):
 
 
 class TagUpdate(BaseModel):
-    name: str
+    name: str | None = None
+    color: str | None = None  # "" clears the color
 
 
 class TimerStart(BaseModel):

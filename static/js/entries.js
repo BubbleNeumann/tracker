@@ -8,8 +8,8 @@ import {
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from "./format.js";
-import { PENCIL_ICON, TRASH_ICON } from "./icons.js";
-import { appendAddTagPill, renderSelectableTagPills } from "./tagPicker.js";
+import { TRASH_ICON } from "./icons.js";
+import { appendAddTagPill, applyTagColor, renderSelectableTagPills } from "./tagPicker.js";
 
 const entriesContainer = document.getElementById("entries-container");
 
@@ -93,6 +93,7 @@ function renderEntries() {
   entriesContainer.querySelectorAll(".delete-btn").forEach((btn) => {
     btn.onclick = async (e) => {
       e.stopPropagation();
+      if (!confirm("Delete this entry?")) return;
       await api(`/api/entries/${btn.dataset.id}`, { method: "DELETE" });
       await loadEntries();
     };
@@ -107,21 +108,24 @@ function renderViewRow(entry) {
     <div class="entry-title">
       <span>${escapeHtml(entry.title)}</span>
       <span class="entry-title-actions">
-        <button class="edit-entry-btn" title="Edit entry">${PENCIL_ICON}</button>
         <button class="delete-btn" data-id="${entry.id}" title="Delete entry">${TRASH_ICON}</button>
       </span>
     </div>
     <div class="entry-meta">
       <span class="entry-duration">${formatDuration(seconds)}</span>
       <span class="entry-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>
-      ${entry.tags.map((t) => `<span class="entry-tag">${escapeHtml(t)}</span>`).join("")}
     </div>
   `;
+  const meta = el.querySelector(".entry-meta");
+  for (const name of entry.tags) {
+    const tagEl = document.createElement("span");
+    tagEl.className = "entry-tag";
+    tagEl.textContent = name;
+    const tag = state.allTags.find((t) => t.name === name);
+    if (tag) applyTagColor(tagEl, tag.color);
+    meta.appendChild(tagEl);
+  }
   el.onclick = () => startEditing(entry);
-  el.querySelector(".edit-entry-btn").onclick = (e) => {
-    e.stopPropagation();
-    startEditing(entry);
-  };
   return el;
 }
 
@@ -185,18 +189,31 @@ function renderEditRow(entry) {
   el.querySelector(".edit-cancel-btn").onclick = () => stopEditing();
   el.querySelector(".edit-save-btn").onclick = async () => {
     const title = editBuffer.title.trim() || "Untitled";
-    const start_time = fromDatetimeLocalValue(editBuffer.start, editBuffer.startRef);
-    const end_time = fromDatetimeLocalValue(editBuffer.end, editBuffer.endRef);
-    await api(`/api/entries/${entry.id}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        title,
-        start_time,
-        end_time,
-        project_id: editBuffer.projectId,
-        tags: Array.from(editBuffer.tags),
-      }),
-    });
+    // The inputs only show minutes, so resending an untouched value would
+    // drop its seconds (and can make a sub-minute entry end <= start).
+    const start_time =
+      editBuffer.start === toDatetimeLocalValue(editBuffer.startRef)
+        ? editBuffer.startRef
+        : fromDatetimeLocalValue(editBuffer.start, editBuffer.startRef);
+    const end_time =
+      editBuffer.end === toDatetimeLocalValue(editBuffer.endRef)
+        ? editBuffer.endRef
+        : fromDatetimeLocalValue(editBuffer.end, editBuffer.endRef);
+    try {
+      await api(`/api/entries/${entry.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title,
+          start_time,
+          end_time,
+          project_id: editBuffer.projectId,
+          tags: Array.from(editBuffer.tags),
+        }),
+      });
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
     editingEntryId = null;
     editBuffer = null;
     await loadEntries();

@@ -103,12 +103,29 @@
 
 <div id="new-project-modal" class="modal-backdrop hidden">
   <div class="modal card">
-    <div class="modal-title">New Project</div>
+    <div id="new-project-title" class="modal-title">New Project</div>
     <input id="new-project-name" type="text" placeholder="Project name" />
     <input id="new-project-color" type="color" value="#7cff2e" />
     <div class="modal-actions">
+      <button id="project-delete" class="btn-link hidden">Delete</button>
       <button id="new-project-cancel" class="btn-link">Cancel</button>
       <button id="new-project-create" class="btn-start">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="edit-tag-modal" class="modal-backdrop hidden">
+  <div class="modal card">
+    <div class="modal-title">Edit Tag</div>
+    <input id="edit-tag-name" type="text" placeholder="Tag name" />
+    <div class="tag-color-row">
+      <input id="edit-tag-color" type="color" value="#4a9eff" />
+      <button id="edit-tag-color-clear" class="btn-link">No color</button>
+    </div>
+    <div class="modal-actions">
+      <button id="edit-tag-delete" class="btn-link">Delete</button>
+      <button id="edit-tag-cancel" class="btn-link">Cancel</button>
+      <button id="edit-tag-save" class="btn-start">Save</button>
     </div>
   </div>
 </div>
@@ -117,6 +134,7 @@
   <div class="modal card">
     <div class="modal-title">Edit Entry</div>
     <input id="edit-entry-title" type="text" placeholder="Title" />
+    <select id="edit-entry-project" class="edit-project-select"></select>
     <div id="edit-entry-tags" class="tag-list"></div>
     <div class="modal-actions">
       <button id="edit-entry-cancel" class="btn-link">Cancel</button>

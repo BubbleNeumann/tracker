@@ -217,6 +217,9 @@ def init_db():
     try:
         _migrate_tags_to_per_project(conn)
         _repair_entry_tags_fk_if_broken(conn)
+        tag_cols = [r["name"] for r in conn.execute("PRAGMA table_info(tags)").fetchall()]
+        if "color" not in tag_cols:
+            conn.execute("ALTER TABLE tags ADD COLUMN color TEXT")
         conn.commit()
         conn.close()
     except Exception:

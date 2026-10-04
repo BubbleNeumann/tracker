@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { state } from "./state.js";
+import { loadEntries } from "./entries.js";
 import { appendAddTagPill, renderSelectableTagPills } from "./tagPicker.js";
 
 const tagListEl = document.getElementById("tag-list");
@@ -17,6 +18,7 @@ export function renderTags() {
   renderSelectableTagPills(tagListEl, state.allTags, state.selectedTags, renderTags, async () => {
     await loadTags();
     renderTags();
+    await loadEntries();
   });
   appendAddTagPill(tagListEl, state.currentProject.id, state.selectedTags, async () => {
     await loadTags();

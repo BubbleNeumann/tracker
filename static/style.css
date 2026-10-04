@@ -364,25 +364,6 @@ body {
 
 .delete-btn:hover { color: var(--red); }
 
-.edit-entry-btn {
-  color: var(--text-dim);
-  cursor: pointer;
-  background: none;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-}
-
-.edit-entry-btn:hover {
-  color: var(--text);
-}
-
-.edit-entry-btn svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
 .empty-state {
   text-align: center;
   color: var(--text-dim);
@@ -647,6 +628,7 @@ body {
 }
 
 #new-project-name,
+#edit-tag-name,
 #edit-entry-title {
   background: #161616;
   border: 1px solid var(--border);
@@ -1231,4 +1213,20 @@ body {
     font-size: 13px;
     padding: 5px 12px;
   }
+}
+
+.tag-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#edit-tag-color {
+  flex: 1;
+  height: 40px;
+  background: #161616;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  cursor: pointer;
 }

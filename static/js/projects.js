@@ -15,6 +15,8 @@ const newProjectBtn = document.getElementById("new-project-btn");
 const newProjectModal = document.getElementById("new-project-modal");
 const newProjectName = document.getElementById("new-project-name");
 const newProjectColor = document.getElementById("new-project-color");
+const newProjectTitle = document.getElementById("new-project-title");
+const projectDeleteBtn = document.getElementById("project-delete");
 const newProjectCancel = document.getElementById("new-project-cancel");
 const newProjectCreate = document.getElementById("new-project-create");
 
@@ -62,36 +64,15 @@ function renderProjectSelector() {
     opt.innerHTML = `
       <span class="project-dot" style="background:${project.color};color:${project.color}"></span>
       <span>${escapeHtml(project.name)}</span>
-      <span class="project-option-delete" data-id="${project.id}" title="Rename or delete project">${PENCIL_ICON}</span>
+      <span class="project-option-delete" data-id="${project.id}" title="Edit project">${PENCIL_ICON}</span>
     `;
     opt.querySelector("span:nth-child(2)").onclick = async () => {
       projectDropdown.classList.add("hidden");
       await switchToProject(project);
     };
-    opt.querySelector(".project-option-delete").onclick = async (e) => {
+    opt.querySelector(".project-option-delete").onclick = (e) => {
       e.stopPropagation();
-      const newName = prompt("Rename project (leave blank to delete):", project.name);
-      if (newName === null) return;
-      if (!newName.trim()) {
-        if (!confirm(`Delete project "${project.name}"? This deletes its time entries too.`)) return;
-        await api(`/api/projects/${project.id}`, { method: "DELETE" });
-        if (state.currentProject && state.currentProject.id === project.id) state.currentProject = null;
-      } else if (newName.trim() !== project.name) {
-        const updated = await api(`/api/projects/${project.id}`, {
-          method: "PUT",
-          body: JSON.stringify({ name: newName.trim() }),
-        });
-        if (state.currentProject && state.currentProject.id === project.id) {
-          state.currentProject = updated;
-        }
-      }
-      await loadProjects();
-      clearTitleInput();
-      state.selectedTags = new Set();
-      await loadTags();
-      renderTags();
-      await loadEntries();
-      await refreshCurrent();
+      openProjectModal(project);
     };
     projectDropdown.appendChild(opt);
   }
@@ -107,28 +88,62 @@ document.addEventListener("click", (e) => {
   }
 });
 
-newProjectBtn.onclick = () => {
-  newProjectName.value = "";
-  newProjectColor.value = "#7cff2e";
+let editingProject = null;
+
+function openProjectModal(project) {
+  editingProject = project;
+  newProjectTitle.textContent = project ? "Edit Project" : "New Project";
+  newProjectCreate.textContent = project ? "Save" : "Create";
+  projectDeleteBtn.classList.toggle("hidden", !project);
+  newProjectName.value = project ? project.name : "";
+  newProjectColor.value = project ? project.color : "#7cff2e";
   newProjectModal.classList.remove("hidden");
-};
+}
+
+async function refreshAfterProjectChange() {
+  await loadProjects();
+  clearTitleInput();
+  state.selectedTags = new Set();
+  await loadTags();
+  renderTags();
+  await loadEntries();
+  await refreshCurrent();
+}
+
+newProjectBtn.onclick = () => openProjectModal(null);
 
 newProjectCancel.onclick = () => newProjectModal.classList.add("hidden");
+
+projectDeleteBtn.onclick = async () => {
+  const project = editingProject;
+  if (!project) return;
+  if (!confirm(`Delete project "${project.name}"? This deletes its time entries too.`)) return;
+  await api(`/api/projects/${project.id}`, { method: "DELETE" });
+  if (state.currentProject && state.currentProject.id === project.id) state.currentProject = null;
+  newProjectModal.classList.add("hidden");
+  await refreshAfterProjectChange();
+};
 
 newProjectCreate.onclick = async () => {
   const name = newProjectName.value.trim();
   if (!name) return;
+  if (editingProject) {
+    const updated = await api(`/api/projects/${editingProject.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name, color: newProjectColor.value }),
+    });
+    if (state.currentProject && state.currentProject.id === updated.id) {
+      state.currentProject = updated;
+    }
+    newProjectModal.classList.add("hidden");
+    await refreshAfterProjectChange();
+    return;
+  }
   const project = await api("/api/projects", {
     method: "POST",
     body: JSON.stringify({ name, color: newProjectColor.value }),
   });
   newProjectModal.classList.add("hidden");
   state.currentProject = project;
-  clearTitleInput();
-  await loadProjects();
-  state.selectedTags = new Set();
-  await loadTags();
-  renderTags();
-  await loadEntries();
-  await refreshCurrent();
+  await refreshAfterProjectChange();
 };
