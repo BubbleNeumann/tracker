@@ -10,7 +10,11 @@ export async function loadTags() {
     state.allTags = [];
     return;
   }
-  state.allTags = await api(`/api/tags?project_id=${state.currentProject.id}`);
+  const projectId = state.currentProject.id;
+  const tags = await api(`/api/tags?project_id=${projectId}`);
+  // Ignore a late response for a project the user has already switched away from.
+  if (state.currentProject?.id !== projectId) return;
+  state.allTags = tags;
 }
 
 export function renderTags() {

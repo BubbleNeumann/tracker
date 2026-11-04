@@ -29,7 +29,12 @@ export async function loadEntries() {
     renderEntries();
     return;
   }
-  lastEntries = await api(`/api/entries?project_id=${state.currentProject.id}`);
+  const projectId = state.currentProject.id;
+  const entries = await api(`/api/entries?project_id=${projectId}`);
+  // The project may have been switched while this request was in flight;
+  // a late response must not overwrite the newer project's list.
+  if (state.currentProject?.id !== projectId) return;
+  lastEntries = entries;
   renderEntries();
 }
 
@@ -105,27 +110,32 @@ function renderViewRow(entry) {
   const el = document.createElement("div");
   el.className = "entry";
   el.innerHTML = `
-    <div class="entry-title">
-      <span>${escapeHtml(entry.title)}</span>
-      <span class="entry-title-actions">
-        <button class="continue-btn" title="Continue this activity">${PLAY_ICON}</button>
-        <button class="delete-btn" data-id="${entry.id}" title="Delete entry">${TRASH_ICON}</button>
-      </span>
+    <div class="entry-main">
+      <div class="entry-title">
+        <span>${escapeHtml(entry.title)}</span>
+      </div>
+      <div class="entry-meta">
+        <span class="entry-duration">${formatDuration(seconds)}</span>
+        <span class="entry-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>
+      </div>
     </div>
-    <div class="entry-meta">
-      <span class="entry-duration">${formatDuration(seconds)}</span>
-      <span class="entry-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>
+    <div class="entry-actions">
+      <button class="continue-btn" title="Continue this activity">${PLAY_ICON}</button>
+      <button class="delete-btn" data-id="${entry.id}" title="Delete entry">${TRASH_ICON}</button>
     </div>
   `;
-  const meta = el.querySelector(".entry-meta");
+  // Tags get their own line under the duration/time, and only when there are any.
+  const tagsEl = document.createElement("div");
+  tagsEl.className = "entry-tags";
   for (const name of entry.tags) {
     const tagEl = document.createElement("span");
     tagEl.className = "entry-tag";
     tagEl.textContent = name;
     const tag = state.allTags.find((t) => t.name === name);
     if (tag) applyTagColor(tagEl, tag.color);
-    meta.appendChild(tagEl);
+    tagsEl.appendChild(tagEl);
   }
+  if (entry.tags.length > 0) el.querySelector(".entry-main").appendChild(tagsEl);
   el.querySelector(".continue-btn").onclick = async (e) => {
     e.stopPropagation();
     try {

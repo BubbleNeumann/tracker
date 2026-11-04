@@ -176,9 +176,19 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-bottom: none;
-  padding: 12px 56px 12px 16px;
+  padding: 12px 16px;
   cursor: pointer;
   position: relative;
+  /* Content and action icons sit in separate columns, so wrapping tags
+     can never run underneath the icons. */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.entry-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .entry:hover {
@@ -316,14 +326,11 @@ body {
   margin-bottom: 6px;
 }
 
-.entry-title-actions {
+.entry-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
+  flex-shrink: 0;
 }
 
 .entry-meta {
@@ -331,6 +338,13 @@ body {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .entry-duration {
@@ -1111,6 +1125,11 @@ body {
 
   .entry-title {
     font-size: 16px;
+  }
+
+  .entry-tags {
+    gap: 8px;
+    margin-top: 10px;
   }
 
   .entry-title span:first-child {

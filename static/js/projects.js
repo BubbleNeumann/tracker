@@ -49,6 +49,15 @@ export async function loadProjects() {
 }
 
 function renderProjectSelector() {
+  renderProjectHeader();
+  // Rebuilding the list while it's open (e.g. from the background poll) can
+  // swap the row out between mousedown and mouseup, which drops the click.
+  // It's rebuilt from fresh data every time the dropdown is opened instead.
+  if (!projectDropdown.classList.contains("hidden")) return;
+  renderProjectDropdown();
+}
+
+function renderProjectHeader() {
   if (state.currentProject) {
     projectDot.style.color = state.currentProject.color;
     projectDot.style.background = state.currentProject.color;
@@ -56,7 +65,9 @@ function renderProjectSelector() {
   } else {
     projectNameEl.textContent = "No project";
   }
+}
 
+function renderProjectDropdown() {
   projectDropdown.innerHTML = "";
   for (const project of state.allProjects) {
     const opt = document.createElement("div");
@@ -66,7 +77,8 @@ function renderProjectSelector() {
       <span>${escapeHtml(project.name)}</span>
       <span class="project-option-delete" data-id="${project.id}" title="Edit project">${PENCIL_ICON}</span>
     `;
-    opt.querySelector("span:nth-child(2)").onclick = async () => {
+    // The whole row is the click target, not just the name text.
+    opt.onclick = async () => {
       projectDropdown.classList.add("hidden");
       await switchToProject(project);
     };
@@ -79,6 +91,7 @@ function renderProjectSelector() {
 }
 
 projectSelector.onclick = () => {
+  if (projectDropdown.classList.contains("hidden")) renderProjectDropdown();
   projectDropdown.classList.toggle("hidden");
 };
 
