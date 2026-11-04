@@ -8,6 +8,8 @@
   --green-dim: #5bcf17;
   --tag-border: #7cff2e;
   --tag-text: #b6ff7a;
+  /* Text on a selected (filled) tag; tagPicker.js picks dark or light per tag color. */
+  --tag-selected-text: #0a1a02;
   --red: #ff2e6d;
   --red-dim: #d4104e;
   --heat-0: #262626;
@@ -29,6 +31,47 @@ body {
   justify-content: center;
   padding: 40px 16px;
   overflow-x: hidden;
+}
+
+/* Decorative bushes pinned to the bottom corners of the screen. They live in the empty
+   space beside the 640px-wide .page column: each bush is at most as wide as that side
+   gap (minus a margin), shrinking on narrower screens and hidden once the gap is too
+   small, so they never overlap the cards. Height follows from the width (aspect ratio
+   comes from the width/height attributes on the <img>). */
+:root {
+  --bush-gap: calc((100vw - 640px) / 2 - 24px);
+}
+
+.bush {
+  position: fixed;
+  bottom: 0;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Hide the empty <img> boxes until their deferred src has loaded. */
+.bush:not([src]) { visibility: hidden; }
+
+/* Full size is 240px tall. */
+.bush-left { left: 0; width: min(265px, var(--bush-gap)); }
+.bush-right { right: 0; width: min(188px, var(--bush-gap)); }
+
+/* Below ~110px of side gap there is no room beside the cards, so the bushes move to the
+   very bottom of the page instead: body padding reserves space under the cards and the
+   bushes sit in it, scrolling with the page. */
+@media (max-width: 907px) {
+  body {
+    position: relative;
+    min-height: 100vh;
+    padding-bottom: 184px;
+  }
+
+  .bush {
+    position: absolute;
+    width: auto;
+    height: 160px;
+  }
 }
 
 .page {
@@ -110,7 +153,7 @@ body {
 
 .tag-pill.selected {
   background: var(--tag-border);
-  color: #fff;
+  color: var(--tag-selected-text);
 }
 
 .tag-pill.add-tag {
@@ -147,11 +190,13 @@ body {
 }
 
 .tag-pill.selected .tag-remove {
-  color: rgba(255, 255, 255, 0.7);
+  color: inherit;
+  opacity: 0.7;
 }
 
 .tag-pill.selected .tag-remove:hover {
-  color: #fff;
+  color: inherit;
+  opacity: 1;
 }
 
 .day-group {
@@ -1026,7 +1071,8 @@ body {
 
 @media (max-width: 600px) {
   body {
-    padding: 20px 12px;
+    /* Bottom keeps the room for the bushes reserved in the max-width: 907px block. */
+    padding: 20px 12px 184px;
     font-size: 19px;
   }
 

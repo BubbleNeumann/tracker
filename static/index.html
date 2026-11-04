@@ -104,6 +104,17 @@
   </div>
 </div>
 
+<footer class="bush-footer" aria-hidden="true">
+  <!-- No src until the page has fully loaded, so the bushes are always fetched last. -->
+  <img class="bush bush-left" data-src="/static/img/bush_left.webp" width="353" height="320" alt="" decoding="async" fetchpriority="low">
+  <img class="bush bush-right" data-src="/static/img/bush_right.webp" width="251" height="320" alt="" decoding="async" fetchpriority="low">
+</footer>
+<script>
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.bush[data-src]').forEach(img => { img.src = img.dataset.src; });
+  });
+</script>
+
 <div id="new-project-modal" class="modal-backdrop hidden">
   <div class="modal card">
     <div id="new-project-title" class="modal-title">New Project</div>

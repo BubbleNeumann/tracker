@@ -52,6 +52,21 @@ export function applyTagColor(el, color) {
   if (!color) return;
   el.style.setProperty("--tag-border", color);
   el.style.setProperty("--tag-text", color);
+  el.style.setProperty("--tag-selected-text", isLightColor(color) ? "#111" : "#fff");
+}
+
+// True if dark text reads better than white on a background of `hex` (#rrggbb),
+// judged by WCAG relative luminance.
+function isLightColor(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(m[1].slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Contrast with black beats contrast with white above ~0.179 luminance.
+  return lum > 0.179;
 }
 
 export function appendAddTagPill(container, projectId, selectedTags, rerender) {
