@@ -7,7 +7,7 @@ from helpers import get_or_create_tag, serialize_entry
 from models import EntryCreate, EntryUpdate
 
 
-def _validate_time_order(start_time: str, end_time: str):
+def _validate_time_order(start_time: str, end_time: str, paused_seconds: float = 0):
     try:
         start = datetime.fromisoformat(start_time)
         end = datetime.fromisoformat(end_time)
@@ -15,6 +15,10 @@ def _validate_time_order(start_time: str, end_time: str):
         raise HTTPException(400, "Invalid start_time or end_time")
     if end <= start:
         raise HTTPException(400, "end_time must be after start_time")
+    if (end - start).total_seconds() <= paused_seconds:
+        raise HTTPException(
+            400, "The entry would be shorter than the time it was paused"
+        )
 
 router = APIRouter(prefix="/api/entries", tags=["entries"])
 
@@ -73,7 +77,7 @@ def update_entry(entry_id: int, payload: EntryUpdate):
 
     if end_time is not None:
         try:
-            _validate_time_order(start_time, end_time)
+            _validate_time_order(start_time, end_time, row["paused_seconds"] or 0)
         except HTTPException:
             conn.close()
             raise

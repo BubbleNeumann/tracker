@@ -2,13 +2,15 @@ import { api } from "./api.js";
 import { state } from "./state.js";
 import {
   dayKey,
+  entryDurationSeconds,
   escapeHtml,
   formatDuration,
   formatTime,
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from "./format.js";
-import { TRASH_ICON } from "./icons.js";
+import { PLAY_ICON, TRASH_ICON } from "./icons.js";
+import { continueEntry } from "./timer.js";
 import { appendAddTagPill, applyTagColor, renderSelectableTagPills } from "./tagPicker.js";
 
 const entriesContainer = document.getElementById("entries-container");
@@ -69,9 +71,7 @@ function renderEntries() {
   }
 
   for (const [day, dayEntries] of groups) {
-    const totalSeconds = dayEntries.reduce((sum, e) => {
-      return sum + (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-    }, 0);
+    const totalSeconds = dayEntries.reduce((sum, e) => sum + entryDurationSeconds(e), 0);
 
     const group = document.createElement("div");
     group.className = "day-group";
@@ -101,13 +101,14 @@ function renderEntries() {
 }
 
 function renderViewRow(entry) {
-  const seconds = (new Date(entry.end_time) - new Date(entry.start_time)) / 1000;
+  const seconds = entryDurationSeconds(entry);
   const el = document.createElement("div");
   el.className = "entry";
   el.innerHTML = `
     <div class="entry-title">
       <span>${escapeHtml(entry.title)}</span>
       <span class="entry-title-actions">
+        <button class="continue-btn" title="Continue this activity">${PLAY_ICON}</button>
         <button class="delete-btn" data-id="${entry.id}" title="Delete entry">${TRASH_ICON}</button>
       </span>
     </div>
@@ -125,6 +126,14 @@ function renderViewRow(entry) {
     if (tag) applyTagColor(tagEl, tag.color);
     meta.appendChild(tagEl);
   }
+  el.querySelector(".continue-btn").onclick = async (e) => {
+    e.stopPropagation();
+    try {
+      await continueEntry(entry);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
   el.onclick = () => startEditing(entry);
   return el;
 }

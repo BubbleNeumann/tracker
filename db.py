@@ -149,7 +149,9 @@ def init_db():
             title TEXT NOT NULL,
             start_time TEXT NOT NULL,
             end_time TEXT,
-            project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE
+            project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+            paused_at TEXT,
+            paused_seconds REAL NOT NULL DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS entry_tags (
@@ -176,6 +178,14 @@ def init_db():
     if "project_id" not in entry_cols:
         conn.execute(
             "ALTER TABLE entries ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE"
+        )
+
+    # migration for pre-existing databases created before timers could be paused
+    if "paused_at" not in entry_cols:
+        conn.execute("ALTER TABLE entries ADD COLUMN paused_at TEXT")
+    if "paused_seconds" not in entry_cols:
+        conn.execute(
+            "ALTER TABLE entries ADD COLUMN paused_seconds REAL NOT NULL DEFAULT 0"
         )
 
     # migration for pre-existing databases created before ban tracking had

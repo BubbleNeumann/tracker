@@ -10,3 +10,8 @@ export const TRASH_ICON = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://ww
   <path d="M6.5 7l.7 11.2A2 2 0 0 0 9.2 20h5.6a2 2 0 0 0 2-1.8L18 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`;
+
+export const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M8 5.5v13a.5.5 0 0 0 .77.42l10-6.5a.5.5 0 0 0 0-.84l-10-6.5A.5.5 0 0 0 8 5.5z"
+    stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>`;

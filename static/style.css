@@ -135,6 +135,7 @@ body {
 
 .tag-remove svg,
 .delete-btn svg,
+.continue-btn svg,
 .project-option-delete svg {
   width: 18px;
   height: 18px;
@@ -364,6 +365,18 @@ body {
 
 .delete-btn:hover { color: var(--red); }
 
+.continue-btn {
+  color: var(--text-dim);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.continue-btn:hover { color: var(--text); }
+
 .empty-state {
   text-align: center;
   color: var(--text-dim);
@@ -477,6 +490,43 @@ body {
 
 .btn-big-stop:hover {
   background: var(--red-dim);
+}
+
+.running-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-big-pause {
+  margin-top: 20px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--green);
+  font-size: 20px;
+  font-weight: 700;
+  padding: 14px 36px;
+  cursor: pointer;
+}
+
+.btn-big-pause:hover {
+  background: rgba(124, 255, 46, 0.12);
+}
+
+.running-widget.is-paused {
+  border-color: var(--text-dim);
+  box-shadow: none;
+}
+
+.running-widget.is-paused .running-elapsed {
+  color: var(--text-dim);
+  text-shadow: none;
+}
+
+.other-running-item.is-paused .other-running-elapsed {
+  color: var(--text-dim);
 }
 
 .header-row {
@@ -1043,8 +1093,9 @@ body {
     font-size: 17px;
   }
 
-  .btn-big-stop {
-    width: 100%;
+  .btn-big-stop,
+  .btn-big-pause {
+    flex: 1;
     padding: 18px 0;
     font-size: 24px;
   }

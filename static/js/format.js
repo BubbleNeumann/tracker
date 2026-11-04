@@ -1,3 +1,12 @@
+// Tracked time of an entry: start-to-end span minus time spent paused. A
+// running entry is measured up to now, or up to the moment it was paused.
+export function entryDurationSeconds(entry) {
+  const end = entry.end_time || entry.paused_at;
+  const endMs = end ? new Date(end).getTime() : Date.now();
+  const span = (endMs - new Date(entry.start_time).getTime()) / 1000;
+  return Math.max(0, span - (entry.paused_seconds || 0));
+}
+
 export function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

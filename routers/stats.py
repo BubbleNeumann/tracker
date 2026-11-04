@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter
 
 from db import get_conn
+from helpers import entry_duration_seconds
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
@@ -11,11 +12,11 @@ def _entries_for(project_id: str):
     conn = get_conn()
     if project_id == "all":
         rows = conn.execute(
-            "SELECT id, title, start_time, end_time FROM entries WHERE end_time IS NOT NULL"
+            "SELECT id, title, start_time, end_time, paused_at, paused_seconds FROM entries WHERE end_time IS NOT NULL"
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, title, start_time, end_time FROM entries WHERE end_time IS NOT NULL AND project_id = ?",
+            "SELECT id, title, start_time, end_time, paused_at, paused_seconds FROM entries WHERE end_time IS NOT NULL AND project_id = ?",
             (int(project_id),),
         ).fetchall()
     conn.close()
@@ -29,9 +30,7 @@ def stats(project_id: str = "all"):
     longest_seconds = 0.0
     longest_entry_id = None
     for r in rows:
-        start = datetime.fromisoformat(r["start_time"])
-        end = datetime.fromisoformat(r["end_time"])
-        duration = (end - start).total_seconds()
+        duration = entry_duration_seconds(r)
         total_seconds += duration
         if duration > longest_seconds:
             longest_seconds = duration
@@ -73,9 +72,8 @@ def stats_daily(project_id: str = "all"):
     daily: dict[str, float] = {}
     for r in rows:
         start = datetime.fromisoformat(r["start_time"])
-        end = datetime.fromisoformat(r["end_time"])
         key = start.date().isoformat()
-        daily[key] = daily.get(key, 0.0) + (end - start).total_seconds()
+        daily[key] = daily.get(key, 0.0) + entry_duration_seconds(r)
     return [{"date": d, "seconds": s} for d, s in sorted(daily.items())]
 
 
@@ -90,7 +88,7 @@ def stats_by_tag(project_id: str = "all"):
     rows = conn.execute(
         f"""
         SELECT t.name AS tag, p.id AS project_id, p.name AS project_name, p.color AS project_color,
-               e.start_time, e.end_time
+               e.start_time, e.end_time, e.paused_at, e.paused_seconds
         FROM entries e
         JOIN entry_tags et ON et.entry_id = e.id
         JOIN tags t ON t.id = et.tag_id
@@ -103,8 +101,6 @@ def stats_by_tag(project_id: str = "all"):
 
     totals: dict[tuple, dict] = {}
     for r in rows:
-        start = datetime.fromisoformat(r["start_time"])
-        end = datetime.fromisoformat(r["end_time"])
         key = (r["project_id"], r["tag"])
         if key not in totals:
             totals[key] = {
@@ -114,7 +110,7 @@ def stats_by_tag(project_id: str = "all"):
                 "project_color": r["project_color"],
                 "seconds": 0.0,
             }
-        totals[key]["seconds"] += (end - start).total_seconds()
+        totals[key]["seconds"] += entry_duration_seconds(r)
 
     result = list(totals.values())
     result.sort(key=lambda x: -x["seconds"])
