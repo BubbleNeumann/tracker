@@ -1,8 +1,25 @@
+// How far the server clock is ahead of this device's clock. Timestamps come
+// from the server, so a running timer must be measured against server time;
+// otherwise a device whose clock is behind shows 00:00:00 until it catches up.
+let serverClockOffsetMs = 0;
+
+export function setServerClock(serverMs, sentAtMs, receivedAtMs) {
+  // Keep the estimate from the fastest round trip seen; it has the least error.
+  const rtt = receivedAtMs - sentAtMs;
+  if (setServerClock.bestRtt !== undefined && rtt > setServerClock.bestRtt + 50) return;
+  setServerClock.bestRtt = Math.min(rtt, setServerClock.bestRtt ?? rtt);
+  serverClockOffsetMs = serverMs - (sentAtMs + rtt / 2);
+}
+
+export function serverNow() {
+  return Date.now() + serverClockOffsetMs;
+}
+
 // Tracked time of an entry: start-to-end span minus time spent paused. A
 // running entry is measured up to now, or up to the moment it was paused.
 export function entryDurationSeconds(entry) {
   const end = entry.end_time || entry.paused_at;
-  const endMs = end ? new Date(end).getTime() : Date.now();
+  const endMs = end ? new Date(end).getTime() : serverNow();
   const span = (endMs - new Date(entry.start_time).getTime()) / 1000;
   return Math.max(0, span - (entry.paused_seconds || 0));
 }

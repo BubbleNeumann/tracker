@@ -86,12 +86,13 @@ export function renderSelectableTagPills(container, allTags, selectedTags, reren
 
     const label = document.createElement("span");
     label.textContent = tag.name;
-    label.onclick = () => {
+    pill.appendChild(label);
+    // The whole pill toggles the tag, not just the text (the edit icon stops propagation).
+    pill.onclick = () => {
       if (selectedTags.has(tag.name)) selectedTags.delete(tag.name);
       else selectedTags.add(tag.name);
       rerender();
     };
-    pill.appendChild(label);
 
     if (onTagsChanged) {
       const edit = document.createElement("span");

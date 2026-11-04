@@ -1,6 +1,7 @@
 import mimetypes
 import os
 import secrets
+import time
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
@@ -73,6 +74,16 @@ def _banned_response() -> Response:
     # Deliberately minimal: no template rendering, no DB lookups beyond the
     # ban check itself, so a banned IP can't cost us much even under a flood.
     return Response(status_code=403, content="Forbidden")
+
+
+@app.middleware("http")
+async def add_server_time(request: Request, call_next):
+    # The frontend measures running timers against the server clock (start_time is
+    # set by the server), so it needs the server's "now" to correct for a device
+    # whose own clock is off.
+    response = await call_next(request)
+    response.headers["X-Server-Time"] = str(int(time.time() * 1000))
+    return response
 
 
 @app.middleware("http")
