@@ -3,7 +3,6 @@ import { state } from "./state.js";
 import { formatDuration, formatDurationLong, formatDurationNoSeconds, isoDate } from "./format.js";
 import { escapeHtml } from "./format.js";
 
-const statsProjectSelect = document.getElementById("stats-project-select");
 const statsTotalTime = document.getElementById("stats-total-time");
 const statsSessions = document.getElementById("stats-sessions");
 const statsLongest = document.getElementById("stats-longest");
@@ -22,16 +21,11 @@ const CELL_SIZE = 13;
 const CELL_GAP = 3;
 const COLUMN_WIDTH = CELL_SIZE + CELL_GAP;
 
-export function renderStatsProjectOptions() {
-  const previousValue = statsProjectSelect.value || "all";
-  statsProjectSelect.innerHTML = '<option value="all">All Projects</option>';
-  for (const project of state.allProjects) {
-    const opt = document.createElement("option");
-    opt.value = project.id;
-    opt.textContent = project.name;
-    statsProjectSelect.appendChild(opt);
-  }
-  statsProjectSelect.value = previousValue;
+const statsView = document.getElementById("stats-view");
+
+// Called after the selected project changes, so an open Statistics tab follows it.
+export async function refreshStatsIfVisible() {
+  if (!statsView.classList.contains("hidden")) await loadStats();
 }
 
 const TAG_COLORS = [
@@ -52,23 +46,28 @@ function tagColor(index) {
 }
 
 export async function loadStats() {
-  const projectId = statsProjectSelect.value || "all";
-  const [totals, daily, byTag] = await Promise.all([
-    api(`/api/stats?project_id=${encodeURIComponent(projectId)}`),
-    api(`/api/stats/daily?project_id=${encodeURIComponent(projectId)}`),
-    api(`/api/stats/by-tag?project_id=${encodeURIComponent(projectId)}`),
-  ]);
+  let totals = { total_seconds: 0, sessions: 0, longest_seconds: 0, longest_label: null };
+  let daily = [];
+  let byTag = [];
+  if (state.currentProject) {
+    const projectId = encodeURIComponent(state.currentProject.id);
+    [totals, daily, byTag] = await Promise.all([
+      api(`/api/stats?project_id=${projectId}`),
+      api(`/api/stats/daily?project_id=${projectId}`),
+      api(`/api/stats/by-tag?project_id=${projectId}`),
+    ]);
+  }
   statsTotalTime.textContent = formatDurationNoSeconds(totals.total_seconds);
   statsSessions.textContent = totals.sessions;
   statsLongest.textContent = formatDurationLong(totals.longest_seconds);
   statsLongestLabel.textContent = totals.longest_label || "";
   state.dailyStats = daily;
-  renderTagStats(byTag, projectId === "all");
+  renderTagStats(byTag);
   renderChart();
   renderCalendar();
 }
 
-function renderTagStats(byTag, groupByProject) {
+function renderTagStats(byTag) {
   tagStatsContainer.innerHTML = "";
   if (byTag.length === 0) {
     const empty = document.createElement("div");
@@ -84,9 +83,7 @@ function renderTagStats(byTag, groupByProject) {
     const row = document.createElement("div");
     row.className = "tag-stat-row";
     const pct = Math.max((tagStat.seconds / maxSeconds) * 100, 2);
-    const label = groupByProject
-      ? `<span class="tag-stat-project">[${escapeHtml(tagStat.project_name)}]</span> ${escapeHtml(tagStat.tag)}`
-      : escapeHtml(tagStat.tag);
+    const label = escapeHtml(tagStat.tag);
     row.innerHTML = `
       <span class="tag-stat-name" style="color:${color}">${label}</span>
       <span class="tag-stat-bar-track">
@@ -98,7 +95,6 @@ function renderTagStats(byTag, groupByProject) {
   });
 }
 
-statsProjectSelect.onchange = loadStats;
 calendarPrevBtn.onclick = () => {
   calendarScroll.scrollBy({ left: -COLUMN_WIDTH * 8, behavior: "smooth" });
 };

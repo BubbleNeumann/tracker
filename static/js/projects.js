@@ -3,7 +3,7 @@ import { state } from "./state.js";
 import { escapeHtml } from "./format.js";
 import { loadEntries } from "./entries.js";
 import { refreshCurrent, clearTitleInput } from "./timer.js";
-import { renderStatsProjectOptions } from "./stats.js";
+import { refreshStatsIfVisible } from "./stats.js";
 import { loadTags, renderTags } from "./tags.js";
 import { PENCIL_ICON } from "./icons.js";
 
@@ -11,7 +11,6 @@ const projectSelector = document.getElementById("project-selector");
 const projectDot = document.getElementById("project-dot");
 const projectNameEl = document.getElementById("project-name");
 const projectDropdown = document.getElementById("project-dropdown");
-const newProjectBtn = document.getElementById("new-project-btn");
 const newProjectModal = document.getElementById("new-project-modal");
 const newProjectName = document.getElementById("new-project-name");
 const newProjectColor = document.getElementById("new-project-color");
@@ -24,12 +23,12 @@ export async function switchToProject(project) {
   state.currentProject = project;
   clearTitleInput();
   renderProjectSelector();
-  renderStatsProjectOptions();
   state.selectedTags = new Set();
   await loadTags();
   renderTags();
   await loadEntries();
   await refreshCurrent();
+  await refreshStatsIfVisible();
 }
 
 document.addEventListener("switch-project", (e) => switchToProject(e.detail));
@@ -45,7 +44,6 @@ export async function loadProjects() {
     state.currentProject = state.allProjects[0];
   }
   renderProjectSelector();
-  renderStatsProjectOptions();
 }
 
 function renderProjectSelector() {
@@ -88,6 +86,14 @@ function renderProjectDropdown() {
     };
     projectDropdown.appendChild(opt);
   }
+  const newOpt = document.createElement("div");
+  newOpt.className = "project-option project-option-new";
+  newOpt.textContent = "+ New Project";
+  newOpt.onclick = () => {
+    projectDropdown.classList.add("hidden");
+    openProjectModal(null);
+  };
+  projectDropdown.appendChild(newOpt);
 }
 
 projectSelector.onclick = () => {
@@ -121,9 +127,8 @@ async function refreshAfterProjectChange() {
   renderTags();
   await loadEntries();
   await refreshCurrent();
+  await refreshStatsIfVisible();
 }
-
-newProjectBtn.onclick = () => openProjectModal(null);
 
 newProjectCancel.onclick = () => newProjectModal.classList.add("hidden");
 
